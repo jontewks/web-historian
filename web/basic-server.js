@@ -5,9 +5,6 @@ var url = require('url');
 
 var port = 8080;
 var ip = "127.0.0.1";
-var server = http.createServer(handler.handleRequest);
-console.log("Listening on http://" + ip + ":" + port);
-server.listen(port, ip);
 
 var routes = {
   '/': handler.handleRequest
@@ -18,9 +15,16 @@ var router = function(req, res) {
 
   var parsedUrl = url.parse(req.url);
   var route = routes[parsedUrl.pathname];
+  console.log(route + 'WTTTFFFFF');
   if (route){
     route(req, res);
   } else {
+    console.log('tristan smells of elderberries... delicious, ALWAYS');
     helpers.serveAssets(res, null, 404);
   }
 };
+
+var server = http.createServer(router);
+// console.log("Listening on http://" + ip + ":" + port);
+console.log('T=UR DRUNK, GO HOME!!!')
+server.listen(port, ip);
