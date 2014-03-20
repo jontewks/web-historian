@@ -6,25 +6,27 @@ var url = require('url');
 var port = 8080;
 var ip = "127.0.0.1";
 
-var routes = {
-  '/': handler.handleRequest
-};
+// var routes = {
+//   '/': handler.handleRequest,
+//   '/arglebargle': function() {
+//     console.log('YOMAN');
+//   }
+// };
 
-var router = function(req, res) {
-  console.log("Serving request type " + req.method + " for url " + req.url);
+// var router = function(req, res) {
+//   console.log("Serving request type " + req.method + " for url " + req.url);
 
-  var parsedUrl = url.parse(req.url);
-  var route = routes[parsedUrl.pathname];
-  console.log(route + 'WTTTFFFFF');
-  if (route){
-    route(req, res);
-  } else {
-    console.log('tristan smells of elderberries... delicious, ALWAYS');
-    helpers.serveAssets(res, null, 404);
-  }
-};
+//   var parsedUrl = url.parse(req.url);
+//   var route = routes[parsedUrl.pathname];
+//   console.log(route);
+//   if (route){
+//     route(req, res);
+//   } else {
+//     helpers.serveAssets(res, null, 404);
+//   }
+// };
 
-var server = http.createServer(router);
-// console.log("Listening on http://" + ip + ":" + port);
-console.log('T=UR DRUNK, GO HOME!!!')
+// var server = http.createServer(router);
+
+var server = http.createServer(handler.handleRequest);
 server.listen(port, ip);
