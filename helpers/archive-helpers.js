@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 var http = require('http');
+var https = require('https');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -41,10 +42,9 @@ exports.isUrlInList = function(url, callback){
     for (var i = 0; i < urlArray.length; i++) {
       if (url === urlArray[i]) {
         callback(true);
-      } else {
-        callback(false);
       }
     }
+    callback(false);
   });
 };
 
@@ -55,6 +55,7 @@ exports.addUrlToList = function(url){
 };
 
 exports.isURLArchived = function(url, callback){
+  if (url[0] === '/') { url = url.slice(1); }
   fs.readdir(exports.paths.archivedSites, function(err, files) {
     if (err) { console.log(err); }
     _.each(files, function(file) {
@@ -66,10 +67,34 @@ exports.isURLArchived = function(url, callback){
   });
 };
 
-exports.downloadUrls = function(url){
-  http.get(url, function(res) {
-  console.log("Got response: " + res.statusCode);
-}).on('error', function(e) {
-  console.log("Got error: " + e.message);
-});
+exports.downloadUrls = function(){
+  exports.readListOfUrls(function(urlArray) {
+    _.each(urlArray, function(url) {
+      exports.isURLArchived(url, function(result) {
+        if (!result) {
+          http.get('http://' + url, function(res) {
+            var html = '';
+            res.on('data', function(chunk) {
+              html += chunk;
+            });
+            res.on('end', function() {
+              fs.writeFile(exports.paths.archivedSites + '/' + url, html);
+            });
+          }).on('error', function(e) {
+            https.get('https://' + url, function(res) {
+              var html = '';
+              res.on('data', function(chunk) {
+                html += chunk;
+              });
+              res.on('end', function() {
+                fs.writeFile(exports.paths.archivedSites + '/' + url, html);
+              });
+            }).on('error', function(e) {
+              console.log('Something is very wrong');
+            });
+          });
+        }
+      });
+    });
+  });
 };

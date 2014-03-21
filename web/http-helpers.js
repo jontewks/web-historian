@@ -10,12 +10,25 @@ exports.headers = headers = {
   'Content-Type': "text/html"
 };
 
-exports.serveAssets = function(res, asset, statusCode) {
+exports.serveAssets = function(res, url, statusCode) {
   // Write some code here that helps serve up your static files!
   // (Static files are things like html (yours or archived from others...), css, or anything that doesn't change often.)
   statusCode = statusCode || 200;
   res.writeHead(statusCode, headers);
-  res.end(asset);
+  fs.readFile(url, function(err, data){
+    if (err) { console.log(err); }
+    res.end(data);
+  });
+};
+
+exports.send404 = function(res) {
+  res.writeHead(404, headers);
+  res.end();
+};
+
+exports.redirectToLoading = function(res) {
+  res.writeHead(302, {location: '/loading.html'});
+  res.end();
 };
 
 // As you progress, keep thinking about what helper functions you can put here!

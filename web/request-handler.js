@@ -8,78 +8,58 @@ var helpers = require('./http-helpers');
 var routes = {
   '/': '/index.html',
   '/styles.css': '/styles.css',
-  '/favicon.ico': '/favicon.ico'
+  '/favicon.ico': '/favicon.ico',
+  '/loading.html': '/loading.html'
 };
 
-archive.isURLArchived('www.google.com', function(result) {
-  console.log('google is archived: ', result);
-});
-
 var getInfo = function(req, res){
-
-  var getURL = url.parse(req.url).pathname;
-  if (routes[getURL]) {
-    fs.readFile(archive.paths.siteAssets + routes[getURL], function (err, data) {
-      if (err) {
-        helpers.serveAssets(res, '404: Sauri Gurl', 404);
-      } else {
-        helpers.serveAssets(res, data, 200);
-      }
-    });
+  var reqUrl = url.parse(req.url).pathname;
+  console.log('requrl', reqUrl);
+  if (routes[reqUrl]) {
+    helpers.serveAssets(res, archive.paths.siteAssets + routes[reqUrl], 200);
   } else {
-    fs.readFile(archive.paths.list, function (err, data) {
-      if (err) {
-        console.log(err);
+    archive.isURLArchived(reqUrl, function(result){
+      if (result) {
+        helpers.serveAssets(res, archive.paths.archivedSites + reqUrl, 200);
       } else {
-        var eachURL = data.toString().split('\n');
-        for (var i=0; i<eachURL.length; i++) {
-          if (getURL === '/' + eachURL[i]) {
-            fs.readFile(path.join(__dirname, '../archives/sites' + getURL), function (err, data) {
-              if (err) {
-                helpers.serveAssets(res, '404: Sauri Gurl', 404);
-              }
-              helpers.serveAssets(res, data, 200);
-            });
+        archive.isUrlInList(reqUrl, function(result){
+          if (result) {
+            helpers.redirectToLoading(res);
+          } else {
+            helpers.send404(res);
           }
-        }
+        });
       }
     });
   }
 };
 
 var postInfo = function(req, res){
-  var daytah = '';
+  var data = '';
   req.on('data', function(chunk){
-    daytah += chunk;
+    data += chunk;
   });
   req.on('end', function(){
-    //console.log('WTF:', data.slice(4));
-    daytah = daytah.slice(4);
-    fs.readFile(archive.paths.list, function (err, data) {
-      if (err) {
-        console.log(err);
+    var reqUrl = data.split('=')[1];
+    archive.isURLArchived(reqUrl, function(result){
+      if (result) {
+        helpers.serveAssets(res, archive.paths.archivedSites + '/' + reqUrl, 200);
       } else {
-        var eachURL = data.toString().split('\n');
-        for (var i=0; i<eachURL.length; i++) {
-          if (daytah === eachURL[i]) {
-            fs.readFile(path.join(__dirname, '../archives/sites' + '/' + daytah), function (err, data) {
-              if (err) {
-                console.log(err);
-              }
-              helpers.serveAssets(res, data, 200);
-            });
+        archive.isUrlInList(reqUrl, function(result){
+          if (result) {
+            helpers.redirectToLoading(res);
+          } else {
+            archive.addUrlToList(reqUrl);
+            helpers.redirectToLoading(res);
           }
-        }
+        });
       }
     });
   });
-
-
-  //helpers.serveAssets(res, asset, 200);
 };
 
 var options = function(req, res){
-  helpers.serveAssets(res, asset, 200);
+  helpers.serveAssets(res, null, 200);
 };
 
 var actions = {
@@ -93,6 +73,6 @@ exports.handleRequest = function (req, res) {
   if (action){
     action(req, res);
   } else {
-    helpers.serveAssets(res, null, 404);
+    helpers.send404(res);
   }
 };
